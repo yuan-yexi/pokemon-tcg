@@ -1,3 +1,4 @@
+from typing import Counter
 import database
 
 
@@ -27,6 +28,7 @@ class Pokemon:
         self.legalities = legalities
         self.images = images
         self.tcg_player = tcg_player
+        self.attached_energy = []
 
     def get_attributes(self):
         print("Id:", self.uuid)
@@ -54,7 +56,7 @@ class Pokemon:
     def get_attacks(self):
         name = self.name
         attacks = self.attacks
-        print("+++++++++")
+        print("---------")
         print(name)
         for index, attack in enumerate(attacks):
             print("---------")
@@ -63,7 +65,47 @@ class Pokemon:
             print(f"Damage: {attack['damage']}")
             if attack['text'] != '':
                 print(f"{attack['text']}")
-        print("+++++++++")
+        print("---------")
+
+    def current_energy(self):
+        if not self.attached_energy:
+            print("No energy attached")
+        else:
+            print(f"{self.name} has {self.attached_energy} energy attached.")
+
+    def add_energy(self, energy):
+        self.attached_energy.append(energy)
+
+    def attack(self):
+        pokemon_name = self.name
+        atk_index = int(input("Pick a move: "))
+        attacks = self.attacks
+        current_energy = sorted(self.attached_energy)
+        selectedAtk = attacks[atk_index - 1]
+        required_energy = sorted(selectedAtk['cost'])
+
+        
+        energy_requirements = dict(Counter(required_energy))
+        existing_energy_count = dict(Counter(current_energy))
+        
+        # Check if len of required and current energy is equal
+        if len(current_energy) < len(required_energy):
+            print("Not enough energy.")
+            for key, num in energy_requirements.items():
+                print(f"Requires {num} {key}.")
+        elif set(required_energy) == {'Colorless'}:
+            print(f"{pokemon_name} used {selectedAtk['name']} for {selectedAtk['damage']}")
+        else:
+            print("Selected Attack:", selectedAtk['name'])
+
+            for r_energy in required_energy:
+                if (r_energy in existing_energy_count) and (r_energy != "Colorless"):
+                    if existing_energy_count[r_energy] == energy_requirements[r_energy]:
+                        print(f"{pokemon_name} used {selectedAtk['name']} for {selectedAtk['damage']}")
+                    else:
+                        print(f"Not enough {r_energy} energy for the attack! Need {energy_requirements[r_energy] - existing_energy_count[r_energy]} {r_energy} more energy.")
+                elif r_energy != "Colorless":
+                    print(f"{pokemon_name} requires {energy_requirements[r_energy]} {r_energy} energy for the attack!")
 
 
 pikachu_data = database.pikachu['data']
@@ -85,5 +127,11 @@ Machop = Pokemon(machop_data['id'], machop_data['name'], machop_data['supertype'
                   machop_data['flavorText'], machop_data['nationalPokedexNumbers'], machop_data['legalities'],
                   machop_data['images'], machop_data['tcgplayer'])
 
-Pikachu.get_attacks()
-Machop.get_attacks()
+if __name__ == "__main__":
+    # Pikachu.get_attacks()
+    Machop.get_attacks()
+
+    Machop.add_energy('Colorless')
+    Machop.add_energy('Fighting')
+    Machop.current_energy()
+    Machop.attack()
